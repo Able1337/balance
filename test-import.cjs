@@ -23,4 +23,9 @@ test('unknown legacy macros stay unknown',()=>{const old={[day.date]:{weight:nul
 console.log('TOTAL '+count+' tests passed');
 test('known manual total survives unknown food fiber and roundtrip',()=>{const e=A.prepare({},parse(day),'merge')[day.date];e.fiber=20;e.chatgpt.baseline.fiber=20;const next=A.prepare({[day.date]:e},parse(day),'merge');assert.equal(next[day.date].fiber,20);const out=A.exportDays(next,day.date,day.date,x=>x.spent);assert.equal(A.prepare({},parse(out),'replace')[day.date].fiber,20)});
 console.log('FINAL '+count+' tests passed');
+test('link formatting variants: padding, percent encoding, whitespace and punctuation',()=>{const raw=JSON.stringify(linkData),standard=Buffer.from(raw,'utf8').toString('base64'),payload=link.split('#import=')[1];for(const value of [standard,encodeURIComponent(standard),payload+').',payload+'=',payload.slice(0,20)+'\n'+payload.slice(20),encodeURIComponent(raw),raw])assert.equal(A.decodeLink(value,opts).days[0].foods[0].name,food.name)});
+test('truncated and corrupt links stay rejected',()=>{const payload=link.split('#import=')[1];for(const value of [payload.slice(0,-7),'%nothex',Buffer.from('not-json','utf8').toString('base64'),Buffer.from([255,254,253]).toString('base64'),'<payload>'])assert.throws(()=>A.decodeLink(value,opts))});
+console.log('LINK FIX: '+count+' tests passed');
+test('full and Markdown URLs accept tracking query without changing payload',()=>{const url=link.replace('/#import=','/?utm_source=chatgpt.com#import=');for(const input of [url,'['+url+']('+url+')','[Добавить]('+url+')'])assert.equal(A.readLink(input,opts).importId,linkData.importId)});
+console.log('ALL '+count+' tests passed');
 
