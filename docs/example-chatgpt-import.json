@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "importId": "meal-20261018-chicken-001",
+  "date": "2026-10-18",
+  "mode": "append",
+  "foods": [
+    {
+      "id": "chicken-lunch-001",
+      "name": "Куриное филе",
+      "weightGrams": 450,
+      "calories": 509,
+      "protein": 103,
+      "fat": 10,
+      "carbs": 0
+    }
+  ],
+  "exercises": [
+    {
+      "id": "walk-001",
+      "name": "Ходьба на дорожке",
+      "durationMinutes": 30,
+      "speedKmh": 5,
+      "inclinePercent": 5,
+      "activeCalories": 250
+    }
+  ],
+  "dailyExpenditure": 2800,
+  "targetDeficit": 784,
+  "accuracy": "Оценка"
+}
