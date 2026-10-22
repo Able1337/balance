@@ -26,3 +26,6 @@ localStorage `balance-v1`, отдельно для каждого браузер
 ## Обмен с ИИ и нутриенты
 Импорт по ссылке или JSON, копируемый промпт с актуальным профилем, обновление контекста, история продуктов и графики жиров, углеводов и клетчатки. Документация: docs/chatgpt-import.md и docs/ai-prompt.md. Проверка: node test-import.cjs и node test-prompt.cjs.
 
+
+Компактный импорт v2 с целыми значениями: docs/compact-import.md. Проверка: node test-compact.cjs. Старые ссылки и JSON v1 поддерживаются.
+
