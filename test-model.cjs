@@ -209,3 +209,12 @@ test("rounding never exceeds 100 kcal per review; implausible source expenditure
   assert.equal(r.proposal.calibratedExpense % 50, 0);
   assert.equal(M.review(s, "2026-09-29", () => 500).proposal, null);
 });
+
+test("historical deficits remain estimates without confirming diary completeness", () => {
+  assert.equal(M.hasDeficit({ intake: 2000 }), true);
+  assert.equal(M.hasDeficit({ intake: 2000, diaryStatus: "unreviewed" }), true);
+  assert.equal(M.hasDeficit({ intake: 2000, diaryStatus: "complete" }), true);
+  assert.equal(M.hasDeficit({ intake: 2000, diaryStatus: "partial" }), false);
+  assert.equal(M.hasDeficit({ weight: 100 }), false);
+  assert.equal(M.hasDeficit(undefined), false);
+});
