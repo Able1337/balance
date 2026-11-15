@@ -1,7 +1,7 @@
 /* Compact wire format v2. Storage continues to use the v1 field names. */
 (function(root){
 const DAY={v:'version',i:'importId',d:'date',m:'mode',f:'foods',e:'exercises',x:'dailyExpenditure',t:'targetDeficit',w:'weight',q:'comments',z:'accuracy',a:'actualTotals'};
-const FOOD={i:'id',n:'name',g:'weightGrams',k:'calories',b:'protein',j:'fat',u:'carbs',c:'fiber',s:'status',q:'comments',z:'accuracy'};
+const FOOD={i:'id',n:'name',g:'weightGrams',k:'calories',b:'protein',j:'fat',u:'carbs',c:'fiber',s:'status',q:'comments',z:'accuracy',r:'calorieRange',o:'calorieSource'};
 const EXERCISE={i:'id',n:'name',t:'durationMinutes',a:'activeCalories',k:'totalCalories',v:'speedKmh',h:'inclinePercent',s:'status',q:'comments',z:'accuracy'};
 const TOTAL={k:'calories',b:'protein',j:'fat',u:'carbs',c:'fiber'};
 function integer(value){if(typeof value==='number'){if(!Number.isFinite(value)||value<0)throw Error('Некорректное число в компактном JSON');return Math.round(value)}return value}
