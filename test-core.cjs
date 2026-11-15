@@ -101,7 +101,8 @@ test("legacy migration keeps exact backup, snapshots, unknown completeness and r
   f.run("migrate()");
   assert.equal(f.storage.get("balance-before-v2"), backup);
   assert(f.run("cycle('2027-04-02').deficit") <= 500);
-  assert.equal(f.run("stats().burned"), 0);
+  assert.equal(f.run("stats().burned"), 2000);
+  assert.equal(f.run("M.quality(state,'2026-11-02').complete"), 0);
 });
 test("failed migration does not partially change or erase legacy diary", () => {
   const f = fixture();

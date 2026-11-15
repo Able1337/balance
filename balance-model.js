@@ -76,6 +76,13 @@
     };
   }
   const status = (e) => (!e ? "missing" : e.diaryStatus || "unreviewed");
+  // Legacy/unreviewed nutrition remains visible as an estimate. Explicitly partial
+  // days and measurement-only dates have no daily deficit outcome.
+  function hasDeficit(e) {
+    return (
+      !!e && finite(e.intake) && ["complete", "unreviewed"].includes(status(e))
+    );
+  }
   function quality(state, on, window = 7) {
     const start = [state.profile.start, add(on, 1 - window)].sort().at(-1),
       dates = [];
@@ -406,6 +413,7 @@
     weights,
     trend,
     status,
+    hasDeficit,
     quality,
     planAt,
     plan,

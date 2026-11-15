@@ -154,12 +154,15 @@ function stats() {
     r = records(),
     total = (p.weight - p.goal) * 7700,
     burned = r
-      .filter(([, e]) => M.status(e) === "complete")
+      .filter(([, e]) => M.hasDeficit(e))
       .reduce((s, [d, e]) => s + expense(e, d) - e.intake, 0);
   return {
     r,
     total,
     burned,
+    unreviewedDays: r.filter(
+      ([, e]) => M.hasDeficit(e) && M.status(e) === "unreviewed",
+    ).length,
     ...progress(today()),
     cycle: cycle(today()),
     days: Math.max(0, diff(today(), p.deadline)),
@@ -282,14 +285,9 @@ function render() {
   if (tab === "plan") plan();
 }
 function calendar() {
-  const now = today(),
-    s = stats(),
-    p = currentPlan(),
-    entry = state.entries[now],
-    recordStatus = M.status(entry),
-    eaten = entry?.intake;
+  const now = today();
   $("#main").innerHTML =
-    `${hero()}<section class="card today-card"><div class="section-head"><h2>Сегодня</h2><span class="pill">${statusLabel(recordStatus)}</span></div><p>${eaten == null ? "Питание ещё не записано" : `Записано ${fmt(eaten)} ккал · ориентир ${fmt(p.low)}–${fmt(p.high)} ккал`}</p>${eaten != null ? `<small>${recordStatus === "complete" ? "Дневник завершён." : "Пока день не завершён, дефицит не подтверждён."}</small>` : ""}<div class="actions"><button class="primary" id="addToday">${entry ? "Редактировать питание" : "Записать питание"}</button><button data-measure>＋ Вес / талия</button></div>${entry && recordStatus !== "complete" ? '<button class="text" id="completeToday">Всё питание за день внесено</button>' : ""}<label class="habit-check"><input type="checkbox" id="habitDone" ${state.measurements?.[now]?.habitDone ? "checked" : ""}> ${esc(state.habit || "Сделать короткую прогулку")}</label></section><div class="section-head"><h2>Дневник</h2><span class="pill">${s.r.length} дней питания</span></div><section class="card calendar-card"><div class="calendar-head"><h3 style="margin:0;text-transform:capitalize">${month.toLocaleDateString("ru-RU", { month: "long", year: "numeric" })}</h3><div class="arrows"><button id="prev" aria-label="Предыдущий месяц">‹</button><button id="next" aria-label="Следующий месяц">›</button></div></div><div class="week">${["ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС", "Полнота"].map((x) => `<span>${x}</span>`).join("")}</div><div class="days" id="days"></div><div class="legend"><span class="legend-good">● В диапазоне</span><span class="legend-low">● Ниже дефицита</span><span class="legend-excess">● Выше дефицита</span><span>○ Неполные / непроверенные</span></div></section>${weeklyCard()}<button class="text wide" data-chatgpt>Импорт / экспорт ChatGPT</button>`;
+    `<section class="card calendar-card" aria-label="Календарь дневника"><div class="calendar-head"><h2 style="text-transform:capitalize">${month.toLocaleDateString("ru-RU", { month: "long", year: "numeric" })}</h2><div class="arrows"><button id="prev" aria-label="Предыдущий месяц">‹</button><button id="goToday" aria-label="Текущий месяц">Сегодня</button><button id="next" aria-label="Следующий месяц">›</button></div></div><div class="week">${["ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС", "Полнота"].map((x) => `<span>${x}</span>`).join("")}</div><div class="days" id="days"></div><div class="legend"><span class="legend-good">● В диапазоне</span><span class="legend-low">● Ниже дефицита</span><span class="legend-excess">● Выше дефицита</span><span>○ Неполные / непроверенные</span></div><div class="calendar-actions"><button class="primary" id="addToday">Записать сегодня</button><button data-measure>Вес / талия</button></div></section>`;
   const first = new Date(month.getFullYear(), month.getMonth(), 1, 12),
     offset = (first.getDay() + 6) % 7,
     count = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate(),
@@ -338,29 +336,10 @@ function calendar() {
     if (b && !b.disabled) openDay(b.dataset.date);
   };
   $("#addToday").onclick = () => openDay(now);
-  if ($("#completeToday"))
-    $("#completeToday").onclick = () => {
-      if (
-        mutate(() => {
-          state.entries[now].diaryStatus = "complete";
-        })
-      )
-        render();
-    };
-  $("#habitDone").onchange = (e) => {
-    const checked = e.target.checked;
-    if (
-      !mutate(() => {
-        state.measurements ||= {};
-        state.measurements[now] = {
-          ...(state.measurements[now] || {}),
-          habitDone: checked,
-        };
-      })
-    )
-      e.target.checked = !checked;
+  $("#goToday").onclick = () => {
+    month = date(now);
+    calendar();
   };
-  bindReview();
 }
 function statusLabel(value) {
   return (
@@ -542,7 +521,7 @@ function chartSeries(r) {
         { dash: true },
       ),
       series("deficit", "Дефицит", "ккал", "#dc9865", (d, e) =>
-        M.status(e) === "complete" ? expense(e, d) - e.intake : null,
+        M.hasDeficit(e) ? expense(e, d) - e.intake : null,
       ),
       series(
         "target",
@@ -671,7 +650,7 @@ function charts() {
     series = chartSeries(r),
     visible = series.filter((s) => !chartHidden.has(s.id));
   $("#main").innerHTML =
-    `<div class="section-head"><div><p class="eyebrow">КАРТИНА В ЦЕЛОМ</p><h1>Ваш прогресс</h1></div><select id="range" class="chart-select" aria-label="Период графика"><option value="7">7 дней</option><option value="30">30 дней</option><option value="0">Всё время</option></select></div><div class="stat-grid"><div class="stat"><small>Расчёт по завершённым дням</small><strong>${fmt(s.burned)}</strong><em>ккал · оценка расхода</em></div><div class="stat"><small>Последний вес</small><strong>${fmt(s.weight, 1)}</strong><em>кг · цель ${fmt(state.profile.goal, 1)}</em></div></div><section class="card"><div class="chart-tabs" role="group" aria-label="Показатели графика">${[
+    `<div class="section-head"><div><p class="eyebrow">КАРТИНА В ЦЕЛОМ</p><h1>Ваш прогресс</h1></div><select id="range" class="chart-select" aria-label="Период графика"><option value="7">7 дней</option><option value="30">30 дней</option><option value="0">Всё время</option></select></div><div class="stat-grid"><div class="stat"><small>Накопленный дефицит</small><strong>${fmt(s.burned)}</strong><em>ккал · расчёт по записям</em></div><div class="stat"><small>Последний вес</small><strong>${fmt(s.weight, 1)}</strong><em>кг · цель ${fmt(state.profile.goal, 1)}</em></div></div><section class="card"><div class="chart-tabs" role="group" aria-label="Показатели графика">${[
       ["energy", "Калории"],
       ["nutrients", "Нутриенты"],
       ["weight", "Вес"],
@@ -683,7 +662,7 @@ function charts() {
       )
       .join(
         "",
-      )}</div><div class="chart-toggles" role="group" aria-label="Линии графика">${series.map((s) => `<button type="button" data-series="${s.id}" aria-pressed="${!chartHidden.has(s.id)}"><i style="border-color:${s.color};border-top-style:${s.dash ? "dashed" : "solid"}"></i>${s.label}</button>`).join("")}${chartView === "energy" ? '<span class="zero-key">— Ноль</span>' : ""}</div>${combinedChart(r, series)}${r.length ? `<details class="chart-values"><summary>Все значения</summary><div class="chart-table"><table><thead><tr><th scope="col">Дата</th>${visible.map((s) => `<th scope="col">${s.label}, ${s.unit}</th>`).join("")}</tr></thead><tbody>${r.map(([d], i) => `<tr><th scope="row">${long(d)}</th>${visible.map((s) => `<td>${Number.isFinite(s.items[i][1]) ? fmt(s.items[i][1], 1) : "—"}</td>`).join("")}</tr>`).join("")}</tbody></table></div></details>` : ""}</section><p class="form-footer">Нажмите на название линии, чтобы скрыть или показать её. Пунктир — ориентиры. Пропуски дат сохранены. Дефицит показан только для завершённых дней. Тренд веса: среднее за 7 дней при 3 измерениях. «Осталось сжечь» — грубый эквивалент массы, не измеренный запас энергии. Отрицательный дефицит означает профицит.</p>`;
+      )}</div><div class="chart-toggles" role="group" aria-label="Линии графика">${series.map((s) => `<button type="button" data-series="${s.id}" aria-pressed="${!chartHidden.has(s.id)}"><i style="border-color:${s.color};border-top-style:${s.dash ? "dashed" : "solid"}"></i>${s.label}</button>`).join("")}${chartView === "energy" ? '<span class="zero-key">— Ноль</span>' : ""}</div>${combinedChart(r, series)}${r.length ? `<details class="chart-values"><summary>Все значения</summary><div class="chart-table"><table><thead><tr><th scope="col">Дата</th>${visible.map((s) => `<th scope="col">${s.label}, ${s.unit}</th>`).join("")}</tr></thead><tbody>${r.map(([d], i) => `<tr><th scope="row">${long(d)}</th>${visible.map((s) => `<td>${Number.isFinite(s.items[i][1]) ? fmt(s.items[i][1], 1) : "—"}</td>`).join("")}</tr>`).join("")}</tbody></table></div></details>` : ""}</section><p class="form-footer">Нажмите на название линии, чтобы скрыть или показать её. Пунктир — ориентиры. Пропуски дат сохранены. Дефицит рассчитан по завершённым и старым непроверенным записям; явно неполные дни исключены. ${s.unreviewedDays ? `Непроверенных дней в общей сумме: ${s.unreviewedDays}. ` : ""}Для калибровки расхода нужны подтверждённые полные дни. Тренд веса: среднее за 7 дней при 3 измерениях. «Осталось сжечь» — грубый эквивалент массы, не измеренный запас энергии. Отрицательный дефицит означает профицит.</p>`;
   $("#range").value = rangeDays;
   $("#range").onchange = (e) => {
     rangeDays = Number(e.target.value);

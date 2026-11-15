@@ -102,7 +102,7 @@ function plan() {
       )
       .join(
         "",
-      )}</tbody></table></div><button class="text" data-measure>Добавить измерение</button></section><section class="card"><h3>Одна привычка</h3><form id="habitForm"><label>Что посильно повторять каждый день<input name="habit" maxlength="100" required value="${esc(state.habit || "Сделать короткую прогулку")}"></label><button class="primary">Сохранить привычку</button></form></section><section class="card"><h3>Исходные данные</h3><div class="row"><span>Вес на старте / цель</span><b>${fmt(p.weight, 1)} / ${fmt(p.goal, 1)} кг</b></div><div class="row"><span>Коэффициент обмена</span><b>${p.metabolicSex === "female" ? "Женский (−161)" : "Мужской (+5)"}</b></div><button class="text" id="editPlan">Изменить параметры</button><label>Белок, г на кг веса периода<input id="proteinFactor" type="number" min="0.1" max="5" step="0.1" value="${p.proteinFactor || 1.6}"></label><small>Цель: ${fmt(proteinTarget(today()), 1)} г. Это настройка пользователя, не индивидуальное назначение.</small></section><section class="card"><h3>Как проверить пользу</h3><p class="muted">Сначала ${study.baselineDays} дней исходных наблюдений, затем ${study.interventionDays} дней проверки. Сравнивайте темп, талию, полноту учёта, голод и энергию. Это личное наблюдение; причинный эффект приложения оно не доказывает.</p><form id="studyForm"><label>Начало наблюдений<input name="start" type="date" min="${p.start}" max="${today()}" value="${study.start}" required></label><button class="primary">Сохранить период проверки</button></form><button class="text" data-report>Скачать исходные данные и отчёт</button></section><section class="card"><h3>История решений</h3>${
+      )}</tbody></table></div><button class="text" data-measure>Добавить измерение</button></section><section class="card"><h3>Одна привычка</h3><label class="habit-check"><input type="checkbox" id="habitDone" ${state.measurements?.[today()]?.habitDone ? "checked" : ""}> Выполнено сегодня</label><form id="habitForm"><label>Что посильно повторять каждый день<input name="habit" maxlength="100" required value="${esc(state.habit || "Сделать короткую прогулку")}"></label><button class="primary">Сохранить привычку</button></form></section><section class="card"><h3>Исходные данные</h3><div class="row"><span>Вес на старте / цель</span><b>${fmt(p.weight, 1)} / ${fmt(p.goal, 1)} кг</b></div><div class="row"><span>Коэффициент обмена</span><b>${p.metabolicSex === "female" ? "Женский (−161)" : "Мужской (+5)"}</b></div><button class="text" id="editPlan">Изменить параметры</button><label>Белок, г на кг веса периода<input id="proteinFactor" type="number" min="0.1" max="5" step="0.1" value="${p.proteinFactor || 1.6}"></label><small>Цель: ${fmt(proteinTarget(today()), 1)} г. Это настройка пользователя, не индивидуальное назначение.</small></section><section class="card"><h3>Как проверить пользу</h3><p class="muted">Сначала ${study.baselineDays} дней исходных наблюдений, затем ${study.interventionDays} дней проверки. Сравнивайте темп, талию, полноту учёта, голод и энергию. Это личное наблюдение; причинный эффект приложения оно не доказывает.</p><form id="studyForm"><label>Начало наблюдений<input name="start" type="date" min="${p.start}" max="${today()}" value="${study.start}" required></label><button class="primary">Сохранить период проверки</button></form><button class="text" data-report>Скачать исходные данные и отчёт</button></section><section class="card"><h3>История решений</h3>${
       (state.planHistory || [])
         .slice(-8)
         .reverse()
@@ -153,6 +153,19 @@ function plan() {
       )
         plan();
     };
+  $("#habitDone").onchange = (e) => {
+    const checked = e.target.checked;
+    if (
+      !mutate(() => {
+        state.measurements ||= {};
+        state.measurements[today()] = {
+          ...(state.measurements[today()] || {}),
+          habitDone: checked,
+        };
+      })
+    )
+      e.target.checked = !checked;
+  };
   $("#habitForm").onsubmit = (e) => {
     e.preventDefault();
     if (
