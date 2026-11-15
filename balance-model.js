@@ -290,23 +290,28 @@
         "Тренд вышел за диапазон удержания. Проверьте устойчивость изменения и привычный режим на следующем обзоре.";
     } else if (
       cal.available &&
+      ((p.calibratedExpense ?? cal.calculated) < 1000 ||
+        (p.calibratedExpense ?? cal.calculated) > 6000)
+    ) {
+      kind = "expense-input";
+      action =
+        "Проверьте введённый суточный расход. Перед уточнением оценки нужно разобраться с исходными значениями.";
+    } else if (
+      cal.available &&
       days(p.effective, on) >= 7 &&
       Math.abs(cal.estimate - (p.calibratedExpense ?? cal.calculated)) >= 150
     ) {
       kind = "calibrate";
       action =
         "Учёт и динамика веса расходятся с формулой. Можно осторожно уточнить оценку расхода.";
+      const baseExpense = p.calibratedExpense ?? cal.calculated;
       proposal = {
         ...p,
         effective: on,
-        calibratedExpense: round(
-          (p.calibratedExpense ?? cal.calculated) +
-            clamp(
-              cal.estimate - (p.calibratedExpense ?? cal.calculated),
-              -100,
-              100,
-            ),
-          50,
+        calibratedExpense: clamp(
+          round(baseExpense + clamp(cal.estimate - baseExpense, -100, 100), 50),
+          Math.ceil((baseExpense - 100) / 50) * 50,
+          Math.floor((baseExpense + 100) / 50) * 50,
         ),
         reason: "weekly-calibration",
       };

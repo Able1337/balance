@@ -200,3 +200,12 @@ test("calorie ranges survive v1 and compact roundtrip; malformed ranges rejected
   rest.foods[0].calorieRange.low = 400;
   assert.throws(() => Import.parse({ ...rest, schemaVersion: 1 }));
 });
+
+test("rounding never exceeds 100 kcal per review; implausible source expenditure blocks proposal", () => {
+  const s = completeHistory();
+  const r = M.review(s, "2026-09-29", () => 2376);
+  assert(r.proposal);
+  assert(Math.abs(r.proposal.calibratedExpense - 2376) <= 100);
+  assert.equal(r.proposal.calibratedExpense % 50, 0);
+  assert.equal(M.review(s, "2026-09-29", () => 500).proposal, null);
+});
