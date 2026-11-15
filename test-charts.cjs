@@ -1,0 +1,13 @@
+const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict');
+const elements={},context={console,Date,Number,Math,JSON,Set,setTimeout,localStorage:{getItem:()=>null},document:{querySelector:s=>elements[s]??={},querySelectorAll:()=>[]},window:{},BalanceImport:require('./chatgpt-import.js')};
+vm.createContext(context);const source=fs.readFileSync(__dirname+'/app.js','utf8');vm.runInContext(source.slice(0,source.indexOf("document.querySelectorAll('nav button').forEach(b=>b.onclick")),context);
+vm.runInContext(`state={profile:{height:190,weight:107,goal:90,birthday:'1998-04-03',start:'2026-10-01',deadline:'2027-04-01',proteinFactor:1.6},entries:{}};`,context);
+const rows=[['2026-11-01',{intake:2000,mode:'custom',spent:2800,protein:180,weight:103,fat:50}],['2026-11-05',{intake:3000,mode:'custom',spent:2600,protein:100,weight:null,fat:null}],['2026-11-15',{intake:2200,mode:'custom',spent:2800,protein:160,weight:101,fat:60}]];
+let series=context.chartSeries(rows);assert.equal(series.length,4);assert.equal(series[1].items[0][1],2800);assert.equal(series[2].items[1][1],-400);
+let svg=context.combinedChart(rows,series);assert(svg.includes('Ноль'));assert(!/NaN|Infinity/.test(svg));assert(svg.includes('cx="130.28571428571428"'),'Dates must retain proportional spacing');
+vm.runInContext("chartHidden.add('expense')",context);assert(!context.combinedChart(rows,series).includes('stroke="#48796b"'));
+vm.runInContext("chartView='weight'",context);series=context.chartSeries(rows);svg=context.combinedChart(rows,series);assert.equal((svg.match(/<polyline/g)||[]).length,3,'Missing weight splits the actual line');assert(!/NaN|Infinity/.test(svg));
+vm.runInContext("chartView='nutrients'",context);series=context.chartSeries(rows);assert.equal(series.length,5);assert.equal(series.find(s=>s.id==='fat').items[1][1],null);svg=context.combinedChart(rows,series);assert(svg.includes('#719a4f'));assert(svg.includes('#d6ad42'));
+assert(context.combinedChart([],series).includes('Добавьте первую запись'));assert(!/NaN|Infinity/.test(context.combinedChart(rows.slice(0,1),context.chartSeries(rows.slice(0,1)))));
+vm.runInContext("chartView='energy';chartHidden.clear();['intake','expense','deficit','target'].forEach(id=>chartHidden.add(id))",context);assert(context.combinedChart(rows,context.chartSeries(rows)).includes('Нет значений'));
+console.log('PASS combined charts: expenditure, negative deficit, proportional dates, toggles, missing data, protein targets, single record and empty states');
