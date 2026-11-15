@@ -288,6 +288,9 @@ const { chromium } = require("playwright"),
       const reg = await navigator.serviceWorker.ready;
       await reg.update();
     });
+    // A newly activated worker is guaranteed to control the next navigation.
+    // Do not race clients.claim() from the first installation with this assertion.
+    await page.reload({ waitUntil: "domcontentloaded" });
     await page.waitForFunction(
       () => navigator.serviceWorker.controller !== null,
     );
