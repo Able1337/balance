@@ -1,8 +1,8 @@
 const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict');
-const elements={},context={console,Date,Number,Math,JSON,Set,setTimeout,localStorage:{getItem:()=>null},document:{querySelector:s=>elements[s]??={},querySelectorAll:()=>[]},window:{},BalanceImport:require('./chatgpt-import.js')};
-vm.createContext(context);const source=fs.readFileSync(__dirname+'/app.js','utf8');vm.runInContext(source.slice(0,source.indexOf("document.querySelectorAll('nav button').forEach(b=>b.onclick")),context);
+const elements={},context={console,Date,Number,Math,JSON,Set,setTimeout,BalanceModel:require('./balance-model.js'),localStorage:{getItem:()=>null},document:{querySelector:s=>elements[s]??={},querySelectorAll:()=>[]},window:{},BalanceImport:require('./chatgpt-import.js')};
+vm.createContext(context);const source=fs.readFileSync(__dirname+'/app.js','utf8');vm.runInContext(source.split("/* APP_BOOTSTRAP */")[0],context);
 vm.runInContext(`state={profile:{height:190,weight:107,goal:90,birthday:'1998-04-03',start:'2026-10-01',deadline:'2027-04-01',proteinFactor:1.6},entries:{}};`,context);
-const rows=[['2026-11-01',{intake:2000,mode:'custom',spent:2800,protein:180,weight:103,fat:50}],['2026-11-05',{intake:3000,mode:'custom',spent:2600,protein:100,weight:null,fat:null}],['2026-11-15',{intake:2200,mode:'custom',spent:2800,protein:160,weight:101,fat:60}]];
+const rows=[['2026-11-01',{intake:2000,diaryStatus:'complete',mode:'custom',spent:2800,protein:180,weight:103,fat:50}],['2026-11-05',{intake:3000,diaryStatus:'complete',mode:'custom',spent:2600,protein:100,weight:null,fat:null}],['2026-11-15',{intake:2200,diaryStatus:'complete',mode:'custom',spent:2800,protein:160,weight:101,fat:60}]];
 let series=context.chartSeries(rows);assert.equal(series.length,4);assert.equal(series[1].items[0][1],2800);assert.equal(series[2].items[1][1],-400);
 let svg=context.combinedChart(rows,series);assert(svg.includes('Ноль'));assert(!/NaN|Infinity/.test(svg));assert(svg.includes('cx="130.28571428571428"'),'Dates must retain proportional spacing');
 vm.runInContext("chartHidden.add('expense')",context);assert(!context.combinedChart(rows,series).includes('stroke="#48796b"'));

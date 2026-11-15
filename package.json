@@ -1,0 +1,14 @@
+{
+  "name": "balance-diary",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Static offline calorie diary and observed weight trends",
+  "scripts": {
+    "test": "node test-model.cjs && node test-core.cjs && node test-import.cjs && node test-prompt.cjs && node test-compact.cjs && node test-charts.cjs",
+    "test:browser": "node test-browser.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.65.1",
+    "prettier": "3.8.3"
+  }
+}
