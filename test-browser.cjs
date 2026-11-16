@@ -316,11 +316,13 @@ const { chromium } = require("playwright"),
         (await page.locator("header").boundingBox()).y >= 0,
         `header clipped ${width}x${height}`,
       );
-      const calendarBounds = await page.locator(".calendar-card").boundingBox(),
-        navBounds = await page.locator("#nav").boundingBox();
+      const cellBounds = await page
+        .locator("#days [data-date]")
+        .first()
+        .boundingBox();
       assert(
-        navBounds.y - (calendarBounds.y + calendarBounds.height) < 32,
-        `calendar should fill the screen ${width}x${height}`,
+        cellBounds.height <= 44,
+        `calendar rows should remain compact ${width}x${height}`,
       );
       const last = await page.locator("#days [data-date]").last().boundingBox(),
         nav = await page.locator("#nav").boundingBox();
