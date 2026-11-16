@@ -264,12 +264,14 @@ function setup(edit = false) {
   };
   if (edit) $("#cancelSetup").onclick = render;
 }
-function hero() {
+function hero(compact = false) {
   const s = stats(),
     t = M.trend(state, today()),
     p = currentPlan(),
     q = M.quality(state, M.add(today(), -1)),
     f = M.forecast(state, today());
+  if (compact)
+    return `<section class="card hero hero-compact" aria-label="Ваша динамика"><div class="hero-top"><div><p class="eyebrow">${p.mode === "maintenance" ? "УДЕРЖАНИЕ ВЕСА" : "ВАША ДИНАМИКА"}</p><div class="big">${fmt(t.value ?? s.weight, 1)} <span>кг · ${t.value === null ? "последний вес" : "тренд"}</span></div><small>${long(s.measuredOn)}</small></div><div class="ring" style="--progress:${s.pc}%;--green-progress:${s.pc}%"><div>${fmt(s.pc)}%</div></div></div><div class="hero-bottom"><div><small>Темп за 28 дней</small><b>${t.rate === null ? "Мало данных" : Math.abs(t.rate) < 0.005 ? "0 кг/нед." : (t.rate > 0 ? "−" : "+") + fmt(Math.abs(t.rate), 2) + " кг/нед."}</b></div><div><small>Питание сегодня</small><b>${fmt(p.low)}–${fmt(p.high)} ккал</b></div><div><small>Полных дней</small><b>${q.complete} / ${q.total}</b></div></div></section>`;
   return `<section class="card hero"><p class="eyebrow">${p.mode === "maintenance" ? "УДЕРЖАНИЕ ВЕСА" : "ВАША ДИНАМИКА"}</p><div class="hero-top"><div><div class="big">${fmt(t.value ?? s.weight, 1)} <span>кг · ${t.value === null ? (t.latest ? "последний вес" : "старт") : "тренд"}</span></div><small>${t.value === null ? `${long(s.measuredOn)} · Для тренда нужны 3 взвешивания за 7 дней` : `Последнее: ${fmt(s.weight, 1)} кг · ${long(s.measuredOn)}`}</small></div><div class="ring" style="--progress:${s.pc}%;--green-progress:${s.pc}%"><div>${fmt(s.pc)}%</div></div></div><div class="hero-bottom"><div><small>Темп за 28 дней</small><b>${t.rate === null ? "Мало данных" : (t.rate >= 0 ? "−" : "+") + fmt(Math.abs(t.rate), 2) + " кг/нед."}</b></div><div><small>Питание сегодня</small><b>${fmt(p.low)}–${fmt(p.high)} ккал</b></div><div><small>Полных дней</small><b>${q.complete} / ${q.total}</b></div></div><p class="hero-note">${f.available ? `При текущем темпе: ${long(f.earliest)} — ${long(f.latest)}. Это сценарий, не обещание.` : f.reason}</p>${p.mode === "maintenance" ? `<small>Ориентир удержания: ${fmt(p.maintenanceWeight - 1, 1)}–${fmt(p.maintenanceWeight + 1, 1)} кг. Оценивайте тренд, а не отдельный скачок.</small>` : ""}</section>`;
 }
 function render() {
@@ -287,7 +289,7 @@ function render() {
 function calendar() {
   const now = today();
   $("#main").innerHTML =
-    `<section class="card calendar-card" aria-label="Календарь дневника"><div class="calendar-head"><h2 style="text-transform:capitalize">${month.toLocaleDateString("ru-RU", { month: "long", year: "numeric" })}</h2><div class="arrows"><button id="prev" aria-label="Предыдущий месяц">‹</button><button id="goToday" aria-label="Текущий месяц">Сегодня</button><button id="next" aria-label="Следующий месяц">›</button></div></div><div class="week">${["ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС", "Полнота"].map((x) => `<span>${x}</span>`).join("")}</div><div class="days" id="days"></div><div class="legend"><span class="legend-good">● В диапазоне</span><span class="legend-low">● Ниже дефицита</span><span class="legend-excess">● Выше дефицита</span><span>○ Неполные / непроверенные</span></div><div class="calendar-actions"><button class="primary" id="addToday">Записать сегодня</button><button data-measure>Вес / талия</button></div></section>`;
+    `${hero(true)}<section class="card calendar-card" aria-label="Календарь дневника"><div class="calendar-head"><h2 style="text-transform:capitalize">${month.toLocaleDateString("ru-RU", { month: "long", year: "numeric" })}</h2><div class="arrows"><button id="prev" aria-label="Предыдущий месяц">‹</button><button id="goToday" aria-label="Текущий месяц">Сегодня</button><button id="next" aria-label="Следующий месяц">›</button></div></div><div class="week">${["ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС", "Полнота"].map((x) => `<span>${x}</span>`).join("")}</div><div class="days" id="days"></div><div class="legend"><span class="legend-good">● В диапазоне</span><span class="legend-low">● Ниже дефицита</span><span class="legend-excess">● Выше дефицита</span><span>○ Неполные / непроверенные</span></div><div class="calendar-actions"><button class="primary" id="addToday">Записать сегодня</button><button data-measure>Вес / талия</button></div></section>`;
   const first = new Date(month.getFullYear(), month.getMonth(), 1, 12),
     offset = (first.getDay() + 6) % 7,
     count = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate(),

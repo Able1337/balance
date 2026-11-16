@@ -70,12 +70,14 @@ const { chromium } = require("playwright"),
       ),
       legacy,
     );
-    assert.equal(await page.locator("#main > section").count(), 1);
+    assert.equal(await page.locator("#main > section").count(), 2);
     assert.equal(
-      await page
-        .locator("#main .hero, #main .review-card, #main .today-card")
-        .count(),
+      await page.locator("#main .review-card, #main .today-card").count(),
       0,
+    );
+    assert.equal(await page.locator("#main .hero-compact").count(), 1);
+    assert(
+      (await page.locator("#main .hero-compact").boundingBox()).height < 170,
     );
     const historicalExpected = Object.entries(saved.entries).reduce(
       (sum, [d, e]) => sum + e.expenseSnapshot - e.intake,
